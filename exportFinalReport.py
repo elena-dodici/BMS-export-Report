@@ -2,7 +2,6 @@ import csv
 import openpyxl
 import pandas as pd
 import pdb
-from win32com.client import Dispatch
 import os
 from datetime import date
 from pathlib import Path
@@ -14,8 +13,9 @@ from openpyxl import Workbook
 import pythoncom
 import datetime
 import re
-
-
+from openpyxl.drawing.image import Image
+from openpyxl.utils import get_column_letter
+from openpyxl.cell import MergedCell
 
 
 
@@ -100,7 +100,7 @@ def get_equipments_list(equip_table):
     #floor_num_dict : the number of the floor in one block {"Block A": 10, "Block B": 11}         [for point summay sheet]
     # block_list: the list of all the blocks in one project ["Block A", "Block B"]                [for iterate in summary sheet]
     # equip_qty_per_MCC_dict: the total quantity of equipment in one MCC location {'MCCZ-1': 1}   [for electrical load]
-   
+
     return equipments_list,equip_qty_per_MCC_dict,block_list,floor_num_dict
 
 def get_points_list(point_table):  
@@ -896,7 +896,7 @@ def createReportExcel(point_file, equip_file, project_file):
             create_point_list_sheet_format(point_record_df,MCCname[0],row_number_list, floor_name_list,total_BMS_point_list_per_floor,spare_points, excel_writer)
     return equip_sum, equip_sum_row_num, equip_sum_count_list, equip_table_row_num, block_list, point_sum,point_sum_row_num,point_sum_count_list,point_table_row_num, report_name
 
-def copy_project_sum(report_name):
+def copy_project_sum_win32(report_name):
     file_path = os.path.abspath('G:\\Ethos Digital\\BMS Points Generator Reports\\Template\\BMS Export Template.xlsx')
  
     path1 = file_path
@@ -916,6 +916,49 @@ def copy_project_sum(report_name):
     wb_des.Close(SaveChanges=True)
     xl.Quit()
    
+def copy_project_sum(report_name):
+    file_path = os.path.abspath('G:\\Ethos Digital\\BMS Points Generator Reports\\Template\\BMS Export Template.xlsx')
+    # Load the source workbook
+    source_wb = openpyxl.load_workbook(file_path)
+    # Get the source worksheet
+    source_sheet = source_wb['Project Summary']
+
+
+    # load workbook and add a new sheet
+    target_wb =load_workbook(report_name)
+    target_sheet = target_wb.create_sheet('Project Summary', 0)
+
+    # Copy the style of each cell in the source sheet to the target sheet
+    for (row, col), source_cell in source_sheet._cells.items():
+        target_cell = target_sheet.cell(column=col, row=row)
+        target_cell.value = source_cell.value
+        target_cell.font = copy(source_cell.font)
+        target_cell.fill = copy(source_cell.fill)
+        target_cell.border = copy(source_cell.border)
+        target_cell.number_format = copy(source_cell.number_format)
+        target_cell.protection = copy(source_cell.protection)
+        target_cell.alignment = copy(source_cell.alignment)
+
+    # Copy column widths
+    for col_letter in source_sheet.column_dimensions:
+        target_sheet.column_dimensions[col_letter].width = source_sheet.column_dimensions[col_letter].width
+
+    # Copy row heights
+    for row_number in source_sheet.row_dimensions:
+        target_sheet.row_dimensions[row_number].height = source_sheet.row_dimensions[row_number].height
+
+    # Copy merged cells
+    for cell_range in source_sheet.merged_cells:
+        target_sheet.merge_cells(cell_range.coord)
+
+
+
+    # Save the target workbook
+    target_wb.save(report_name)   
+    target_wb.close()
+
+
+
 
 def edit_project_summary(projectName, current_date,report_name):
    
@@ -932,6 +975,12 @@ def edit_project_summary(projectName, current_date,report_name):
     
     formatted_date = current_date.strftime('%d/%m/%Y')
     ws['F2'] = formatted_date
+
+
+    # insert image
+    img = Image('logo.png')
+    ws.add_image(img, 'B2')
+
     wb.save(report_name)
 
 def edit_electrical_loads(qty_per_MCC,report_name):
@@ -1023,7 +1072,7 @@ def edit_electrical_loads(qty_per_MCC,report_name):
 
     wb.save(report_name)
 
-def copy_electrical_loads_title(qty_per_MCC,report_name):
+def copy_electrical_loads_title_win32(qty_per_MCC,report_name):
 
     file_path = os.path.abspath('G:\\Ethos Digital\\BMS Points Generator Reports\\Template\\BMS Export Template.xlsx')
  
@@ -1056,6 +1105,121 @@ def copy_electrical_loads_title(qty_per_MCC,report_name):
     wb_res.Close(SaveChanges=False)
     wb_des.Close(SaveChanges=True)
     xl.Quit()
+
+def copy_electrical_loads_title(qty_per_MCC,report_name):
+
+    file_path = os.path.abspath('G:\\Ethos Digital\\BMS Points Generator Reports\\Template\\BMS Export Template.xlsx')
+   
+    path2 = report_name
+   
+
+    source_wb = openpyxl.load_workbook(file_path)
+    target_wb =load_workbook(report_name)
+    source_sheet = source_wb['LG Floor - Electrical Loads']
+    # Find the index of the specific sheet
+    specific_sheet_index = target_wb.sheetnames.index('Points Summary')
+  
+
+    for key, innerdict in qty_per_MCC.items():
+        
+            
+       
+        # ws2 = wb_des.Worksheets.Add(After = wb_des.Worksheets['Project Summary'])
+        # ws2.Name = f"{key} - Electrical Loads"
+        target_sheet = target_wb.create_sheet(f"{key} - Electrical Loads", specific_sheet_index + 1)
+        # Copy a range from the original worksheet
+        # row of equip qty + offset
+        #start_row_sum = sum(innerdict.values()) + 12
+        #ws_res.Range("A1:AA10").Copy(ws2.Range("A1:AA10"))
+        #ws_res.Range("B43:AA49").Copy(ws2.Range(f"B{start_row_sum}:AA{start_row_sum + 6}"))
+
+        
+        
+        
+        
+        for i in range(1, 11):
+            for j in range(1, 28):
+                source_cell = source_sheet.cell(row=i, column=j)
+                target_cell = target_sheet.cell(row=i, column=j)
+                
+
+                # Copy the value
+                if not isinstance(source_cell, MergedCell):
+                    target_cell.value = source_cell.value
+         
+                # Copy the style
+                if source_cell.has_style:
+                    target_cell._style = copy(source_cell._style)
+                
+
+                if source_sheet.merged_cells.ranges:
+                     
+                    for merged_range in source_sheet.merged_cells.ranges:
+                        if source_cell.coordinate in merged_range:
+                            # Merge the same cells in the target sheet
+                            print(merged_range)
+                            target_sheet.merge_cells(str(merged_range))
+                            
+        #         # Copy the value
+        #         target_cell.value = source_cell.value
+               
+                
+        #         target_cell.font = copy(source_cell.font)
+        #         target_cell.fill = copy(source_cell.fill)
+        #         target_cell.border = copy(source_cell.border)
+        #         target_cell.number_format = copy(source_cell.number_format)
+        #         target_cell.protection = copy(source_cell.protection)
+        #         target_cell.alignment = copy(source_cell.alignment)
+                
+        #         # Copy the style
+        #         if source_cell.has_style:
+        #             target_cell._style = copy(source_cell._style)
+
+
+        #         # # Copy merged cells
+        #         # for cell_range in source_sheet.merged_cells:
+        #         #     target_sheet.merge_cells(cell_range.coord)
+
+                        
+        #         # Copy the dimensions
+        #         target_sheet.row_dimensions[i] = copy(source_sheet.row_dimensions[i])
+        #         target_sheet.column_dimensions[get_column_letter(j)] = copy(source_sheet.column_dimensions[get_column_letter(j)])
+        
+
+    ###########
+
+
+    # Copy the style of each cell in the source sheet to the target sheet
+    # for (row, col), source_cell in source_sheet._cells.items():
+    #     target_cell = target_sheet.cell(column=col, row=row)
+    #     target_cell.value = source_cell.value
+    #     target_cell.font = copy(source_cell.font)
+    #     target_cell.fill = copy(source_cell.fill)
+    #     target_cell.border = copy(source_cell.border)
+    #     target_cell.number_format = copy(source_cell.number_format)
+    #     target_cell.protection = copy(source_cell.protection)
+    #     target_cell.alignment = copy(source_cell.alignment)
+
+    # # Copy column widths
+    # for col_letter in source_sheet.column_dimensions:
+    #     target_sheet.column_dimensions[col_letter].width = source_sheet.column_dimensions[col_letter].width
+
+    # # Copy row heights
+    # for row_number in source_sheet.row_dimensions:
+    #     target_sheet.row_dimensions[row_number].height = source_sheet.row_dimensions[row_number].height
+
+    # # Copy merged cells
+    # for cell_range in source_sheet.merged_cells:
+    #     target_sheet.merge_cells(cell_range.coord)
+
+
+
+
+
+    # Save the target workbook
+    target_wb.save(report_name)   
+    target_wb.close()
+
 
 def equip_summary_format(equip_sum,equip_sum_row_num,equip_sum_count_list,equip_table_row_num,block_list,report_name):
     path = report_name
@@ -1309,19 +1473,7 @@ def apply_border_again(block_list,point_sum_row_num,point_sum):
     path = 'G:\\Ethos Digital\\BMS Points Generator Reports\\BMS Final Export.xlsx'
     wb = load_workbook(path)
     ws = wb['Points Summary']
-    bottom_border = Border(left=Side(style='dashed'), 
-                     right=Side(style='dashed'), 
-                     top=Side(style='dashed'), 
-                     bottom=Side(style='thick'))
 
-    left_corner_cell_border= Border(left=Side(style='thick'), 
-                     right=Side(style='dashed'), 
-                     top=Side(style='dashed'), 
-                     bottom=Side(style='thick'))
-    right_corner_cell_border= Border(left=Side(style='dashed'), 
-                     right=Side(style='thick'), 
-                     top=Side(style='dashed'), 
-                     bottom=Side(style='thick'))
 
       
     wb.save(path)
@@ -1352,12 +1504,12 @@ def get_final_report(projectName):
 
 
   
-    copy_electrical_loads_title(qty_per_MCC,report_name)
-    edit_electrical_loads(qty_per_MCC,report_name)
+    # copy_electrical_loads_title(qty_per_MCC,report_name)
+    #edit_electrical_loads(qty_per_MCC,report_name)
     
     #openpyxl didn't preserve all the original information when it loaded the workbook, some of the original formatting might be lost, so we need to reapply missing feature
-    apply_border_again(block_list,point_sum_row_num,point_sum)
+    # apply_border_again(block_list,point_sum_row_num,point_sum)
 
-#if __name__=="__main__":
+# if __name__=="__main__":
     #get_final_report('Camden Yard Script Test')
-   # get_final_report('Linkedin 4 Wilton Park')
+    # get_final_report('Linkedin 4 Wilton Park')
