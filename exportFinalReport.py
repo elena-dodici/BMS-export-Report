@@ -1358,7 +1358,6 @@ def get_final_report(projectName):
     #openpyxl didn't preserve all the original information when it loaded the workbook, some of the original formatting might be lost, so we need to reapply missing feature
     apply_border_again(block_list,point_sum_row_num,point_sum)
 
-
 #if __name__=="__main__":
     #get_final_report('Camden Yard Script Test')
    # get_final_report('Linkedin 4 Wilton Park')
