@@ -30,12 +30,7 @@ jobs:
       - name: Update pip
         run: |
           pip install --upgrade pip
-
-      - name: Install pypiwin
-        run: |
-          pip install pypiwin32
-
-          
+      
 
       - name: Install dependencies
         run: pip install -r requirements.txt
