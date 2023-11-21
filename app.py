@@ -2,6 +2,8 @@ import os
 
 from flask import (Flask, redirect, render_template, request,
                    send_from_directory, url_for)
+from exportFinalReport import *
+
 
 app = Flask(__name__)
 
@@ -19,7 +21,7 @@ def favicon():
 @app.route('/hello', methods=['POST'])
 def hello():
    name = request.form.get('name')
-
+   get_final_report(name)
    if name:
        print('Request for hello page received with name=%s' % name)
        return render_template('hello.html', name = name)
