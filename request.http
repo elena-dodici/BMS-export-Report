@@ -1,0 +1,6 @@
+### Request 1
+GET  http://127.0.0.1:5000/
+
+
+### Request 2
+GET  http://azure-flask-12.azurewebsites.net
