@@ -900,7 +900,7 @@ def copy_project_sum_win32(report_name):
     file_path = os.path.abspath('G:\\Ethos Digital\\BMS Points Generator Reports\\Template\\BMS Export Template.xlsx')
  
     path1 = file_path
-    xl=Dispatch("Excel.Application",pythoncom.CoInitialize())
+    #xl=Dispatch("Excel.Application",pythoncom.CoInitialize())
     path2 = report_name
    
 
@@ -1079,7 +1079,7 @@ def copy_electrical_loads_title_win32(qty_per_MCC,report_name):
     path1 = file_path
  
     path2 = report_name
-    xl = Dispatch("Excel.Application")
+    #xl = Dispatch("Excel.Application")
 
 
     wb_res = xl.Workbooks.Open(Filename=path1)
