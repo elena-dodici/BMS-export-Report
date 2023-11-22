@@ -542,8 +542,8 @@ def createPointsDF(group,point_equip_type_set, point_list ):
                     else:
                         if pinfo[0].split("_")[0] == "Others":
                             point_record = {
-                                        "Equipment":  f"Others({pinfo[0].split("_")[1]})",
-                                        "Equipment Tag": f"Others({pinfo[1].split("_")[1]})",
+                                        "Equipment":  f"Others({pinfo[0].split('_')[1]})",
+                                        "Equipment Tag": f"Others({pinfo[1].split('_')[1]})",
                                         "LL-QTY": 0,
                                         "FO-QTY":pty.Quantity,
                                         "Floor": pinfo[2],
@@ -618,8 +618,8 @@ def createPointsDF2(group,point_equip_type_set, point_list ):
                             # Other_core -> Other(Core)
                             if pinfo[0].split("_")[0] == "Others":
                                 point_record = {
-                                        "Equipment": f"Others({pinfo[0].split("_")[1].replace('_', ' ')})",
-                                        "Equipment Tag": f"Others({pinfo[1].split("_")[1].replace('_', ' ')})",
+                                        "Equipment": f"Others({pinfo[0].split('_')[1].replace('_', ' ')})",
+                                        "Equipment Tag": f"Others({pinfo[1].split('_')[1].replace('_', ' ')})",
                                         "LL-QTY": pty.Quantity,
                                         "FO-QTY":0,
                                         "Floor": pinfo[2],
@@ -650,8 +650,8 @@ def createPointsDF2(group,point_equip_type_set, point_list ):
                         else:
                             if pinfo[0].split("_")[0] == "Others":
                                 point_record = {
-                                            "Equipment":  f"Others({pinfo[0].split("_")[1]})",
-                                            "Equipment Tag": f"Others({pinfo[1].split("_")[1]})",
+                                            "Equipment":  f"Others({pinfo[0].split('_')[1]})",
+                                            "Equipment Tag": f"Others({pinfo[1].split('_')[1]})",
                                             "LL-QTY": 0,
                                             "FO-QTY":pty.Quantity,
                                             "Floor": pinfo[2],
