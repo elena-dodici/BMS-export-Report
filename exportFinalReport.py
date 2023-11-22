@@ -54,7 +54,7 @@ def get_equipments_list(equip_table):
                     "block": row[0],
                     "floor": row[1],
                     "area":  row[2],
-                    "type":f'Others({row[3].split('_',1)[1].replace('_', ' ')})',
+                    "type":f'Others({row[3].split("_",1)[1].replace("_", " ")})',
                     "title":row[4],
                     "quantity":int(row[6]),
                     "no_of_points":int(row[7]),
@@ -510,8 +510,8 @@ def createPointsDF(group,point_equip_type_set, point_list ):
                         # Other_core -> Other(Core)
                         if pinfo[0].split("_")[0] == "Others":
                             point_record = {
-                                    "Equipment": f"Others({pinfo[0].split("_")[1].replace('_', ' ')})",
-                                    "Equipment Tag": f"Others({pinfo[1].split("_")[1].replace('_', ' ')})",
+                                    "Equipment": f"Others({pinfo[0].split('_')[1].replace('_', ' ')})",
+                                    "Equipment Tag": f"Others({pinfo[1].split('_')[1].replace('_', ' ')})",
                                     "LL-QTY": pty.Quantity,
                                     "FO-QTY":0,
                                     "Floor": pinfo[2],
