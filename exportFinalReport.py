@@ -877,7 +877,7 @@ def create_point_list_sheet_format(tot_df,MCCname,row_number_list, floor_name_li
 def createReportExcel(point_file, equip_file, project_file):
     project_name = point_file.split("-")[1]
     report_date = point_file.split("-")[2] + "-" + point_file.split("-")[3] +"-" + point_file.split("-")[4].split(".")[0]
-    report_name = f'G:\\Ethos Digital\\BMS Points Generator Reports\\{project_name} - Points Schedule - {report_date}.xlsx'
+    report_name = f'\\\\eeazurefilesne.file.core.windows.net\\generalshare\\Ethos Digital\\BMS Points Generator Reports\\{project_name} - Points Schedule - {report_date}.xlsx'
     file_path = os.path.abspath(report_name)
    
     equip_sum,equip_sum_row_num, equip_sum_count_list,block_list,equip_table_row_num, tot_point_per_block_equip, tot_point_per_floor_equip = createEquipSummaryDF(equip_file)
@@ -903,7 +903,7 @@ def createReportExcel(point_file, equip_file, project_file):
     return equip_sum, equip_sum_row_num, equip_sum_count_list, equip_table_row_num, block_list, point_sum,point_sum_row_num,point_sum_count_list,point_table_row_num, report_name
 
 def copy_project_sum_win32(report_name):
-    file_path = os.path.abspath('G:\\Ethos Digital\\BMS Points Generator Reports\\Template\\BMS Export Template.xlsx')
+    file_path = os.path.abspath('\\\\eeazurefilesne.file.core.windows.net\\generalshare\\Ethos Digital\\BMS Points Generator Reports\\Template\\BMS Export Template.xlsx')
  
     path1 = file_path
     #xl=Dispatch("Excel.Application",pythoncom.CoInitialize())
@@ -923,7 +923,7 @@ def copy_project_sum_win32(report_name):
     xl.Quit()
    
 def copy_project_sum(report_name):
-    file_path = os.path.abspath('G:\\Ethos Digital\\BMS Points Generator Reports\\Template\\BMS Export Template.xlsx')
+    file_path = os.path.abspath('\\\\eeazurefilesne.file.core.windows.net\\generalshare\\Ethos Digital\\BMS Points Generator Reports\\Template\\BMS Export Template.xlsx')
     # Load the source workbook
     source_wb = openpyxl.load_workbook(file_path)
     # Get the source worksheet
@@ -970,7 +970,7 @@ def edit_project_summary(projectName, current_date,report_name):
    
     wb = load_workbook(report_name)
     ws = wb['Project Summary']
-    projectFile = Path(f'G:\\Ethos Digital\\BMS Points Generator Reports\\Points Schedule - {projectName} - {current_date.day:02d}-{current_date.month:02d}-{current_date.year}.csv\\Projects.csv')
+    projectFile = Path(f'\\\\eeazurefilesne.file.core.windows.net\\generalshare\\Ethos Digital\\BMS Points Generator Reports\\Points Schedule - {projectName} - {current_date.day:02d}-{current_date.month:02d}-{current_date.year}.csv\\Projects.csv')
     dfProject = pd.read_csv(projectFile)
     ws['C2'] = dfProject.loc[0]['JobName']
     ws['C4'] = dfProject.loc[0]['JobName']
@@ -1223,9 +1223,9 @@ def edit_electrical_loads(qty_floor_mcc_df,report_name):
 
 def copy_electrical_loads_title_win32(qty_per_MCC,report_name):
 
-    file_path = os.path.abspath('G:\\Ethos Digital\\BMS Points Generator Reports\\Template\\BMS Export Template.xlsx')
+   #file_path = os.path.abspath('\\\\eeazurefilesne.file.core.windows.net\\generalshare\\Ethos Digital\\BMS Points Generator Reports\\Template\\BMS Export Template.xlsx')
  
-    path1 = file_path
+   # path1 = file_path
  
     path2 = report_name
     #xl = Dispatch("Excel.Application")
@@ -1256,8 +1256,8 @@ def copy_electrical_loads_title_win32(qty_per_MCC,report_name):
     xl.Quit()
 
 def copy_electrical_loads_title(qty_floor_mcc_df,report_name):
-
-    file_path = os.path.abspath('G:\\Ethos Digital\\BMS Points Generator Reports\\Template\\BMS Export Template.xlsx')
+    
+    file_path = os.path.abspath('\\\\eeazurefilesne.file.core.windows.net\\generalshare\\Ethos Digital\\BMS Points Generator Reports\\Template\\BMS Export Template.xlsx')
     # Load the source workbook
     source_wb = openpyxl.load_workbook(file_path)
     # Get the source worksheet
@@ -1266,7 +1266,7 @@ def copy_electrical_loads_title(qty_floor_mcc_df,report_name):
 
     # load workbook and add a new sheet
     target_wb =load_workbook(report_name)
-
+    
     for key in qty_floor_mcc_df["MCC"].unique():
         target_sheet = target_wb.create_sheet(f"{key} - Electrical Loads", 1)
 
@@ -1571,14 +1571,14 @@ def get_final_report(projectName):
     current_date = date.today()
     #current_date = datetime.datetime(2023, 11, 15)
     equip_sum, equip_sum_row_num, equip_sum_count_list, equip_table_row_num, block_list,point_sum, point_sum_row_num,point_sum_count_list, point_table_row_num,report_name = createReportExcel(
-                      f'\\eeazurefilesne.file.core.windows.net\\Ethos Digital\\BMS Points Generator Reports\\Points Schedule - {projectName} - {current_date.day:02d}-{current_date.month:02d}-{current_date.year}.csv\\Points.csv',
-                      f'\\eeazurefilesne.file.core.windows.net\\\Ethos Digital\\BMS Points Generator Reports\\Points Schedule - {projectName} - {current_date.day:02d}-{current_date.month:02d}-{current_date.year}.csv\\Equipment.csv',
-                      f'\\eeazurefilesne.file.core.windows.net\\Ethos Digital\\BMS Points Generator Reports\\Points Schedule - {projectName} - {current_date.day:02d}-{current_date.month:02d}-{current_date.year}.csv\\Projects.csv')
-    
+                      f'\\\\eeazurefilesne.file.core.windows.net\\generalshare\\Ethos Digital\\BMS Points Generator Reports\\Points Schedule - {projectName} - {current_date.day:02d}-{current_date.month:02d}-{current_date.year}.csv\\Points.csv',
+                      f'\\\\eeazurefilesne.file.core.windows.net\\generalshare\\Ethos Digital\\BMS Points Generator Reports\\Points Schedule - {projectName} - {current_date.day:02d}-{current_date.month:02d}-{current_date.year}.csv\\Equipment.csv',
+                      f'\\\\eeazurefilesne.file.core.windows.net\\generalshare\\Ethos Digital\\BMS Points Generator Reports\\Points Schedule - {projectName} - {current_date.day:02d}-{current_date.month:02d}-{current_date.year}.csv\\Projects.csv')
+   
     #openpyxl to format the cell font
     ## need get equip per MCC {'MMC -A' : {"fcu" : 6, "ahu":9}}
     ### num of equipment = row of that equip
-    _, qty_floor_mcc_df ,_,floor_num_dict= get_equipments_list(f'\\eeazurefilesne.file.core.windows.net\\generalshare\\Ethos Digital\\BMS Points Generator Reports\\Points Schedule - {projectName} - {current_date.day:02d}-{current_date.month:02d}-{current_date.year}.csv\\Equipment.csv') 
+    _, qty_floor_mcc_df ,_,floor_num_dict= get_equipments_list(f'\\\\eeazurefilesne.file.core.windows.net\\generalshare\\Ethos Digital\\BMS Points Generator Reports\\Points Schedule - {projectName} - {current_date.day:02d}-{current_date.month:02d}-{current_date.year}.csv\\Equipment.csv') 
     point_summary_format(point_sum,point_sum_row_num,point_sum_count_list,point_table_row_num, block_list,floor_num_dict,report_name)
     equip_summary_format(equip_sum,equip_sum_row_num,equip_sum_count_list,equip_table_row_num, block_list,report_name)
    
@@ -1589,9 +1589,9 @@ def get_final_report(projectName):
     edit_project_summary(projectName,current_date,report_name)
 
 
-  
-    copy_electrical_loads_title(qty_floor_mcc_df,report_name)
-    edit_electrical_loads(qty_floor_mcc_df,report_name)
+    if not qty_floor_mcc_df.empty:
+        copy_electrical_loads_title(qty_floor_mcc_df,report_name)
+        edit_electrical_loads(qty_floor_mcc_df,report_name)
     
     #openpyxl didn't preserve all the original information when it loaded the workbook, some of the original formatting might be lost, so we need to reapply missing feature
     ## in our case,. equipment summary 2 bottom border has issue
