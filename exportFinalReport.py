@@ -380,6 +380,7 @@ def create_point_sum_format(writer,sheet_name,point_sum_row_num,point_sum_df,are
         worksheet.write(f'F{point_bd_row}',"Smart Points",border_format)
         worksheet.write(f'G{point_bd_row}',"Plus Spare",border_format)
         worksheet.write(f'H{point_bd_row}',"Totals",border_format)
+        print(os.getcwd())
         worksheet.insert_image("B2", "logo.png",{"x_offset": 30, "y_offset": 10})
 
     #####  MERGE total
@@ -1597,6 +1598,6 @@ def get_final_report(projectName):
     ## in our case,. equipment summary 2 bottom border has issue
     apply_border_again(equip_sum_row_num,equip_table_row_num,report_name)
 
-# if __name__=="__main__":
-#     #get_final_report('Camden Yard Script Test')
-#     get_final_report('Linkedin Test')
+if __name__=="__main__":
+    #get_final_report('Camden Yard Script Test')
+    get_final_report('Linkedin Test')
