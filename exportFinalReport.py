@@ -2,6 +2,7 @@ import csv
 import openpyxl
 import pandas as pd
 import os
+import pdb
 from datetime import date
 from pathlib import Path
 from openpyxl import load_workbook
@@ -11,7 +12,9 @@ import re
 from openpyxl.drawing.image import Image
 from openpyxl.utils import get_column_letter
 from openpyxl.cell import MergedCell
-
+import math
+from openpyxl.utils import rows_from_range
+from openpyxl.worksheet.cell_range import CellRange
 
 
 
@@ -38,7 +41,7 @@ def get_equipments_list(equip_table):
         csvreader = csv.reader(equipTable)
         header = next(csvreader)
         equipments_list = [] # type: list 
-        equip_qty_per_MCC_dict = {}
+        equip_qty_per_floor_MCC = []
         block_set = set()
         floor_num_dict = {}
         floor_set = set()
@@ -82,11 +85,13 @@ def get_equipments_list(equip_table):
         ### only electruical load == true is needed to be filled in electric load table
             if row[11] == "TRUE":
                 
-                if row[10] in equip_qty_per_MCC_dict:
-                    equip_qty_per_MCC_dict[row[10]][row[4]] = int(row[6])
-                else:
-                    equip_qty_per_MCC_dict[row[10]]= {row[4]:int(row[6])} 
+                # if row[10] in equip_qty_per_floor_MCC:
+                #     equip_qty_per_MCC_dict[row[10]][row[4]] = int(row[6])
+                # else:
+                #     equip_qty_per_floor_MCC[row[10]]= {row[4]:int(row[6])} 
 
+                equip_qty_per_floor_MCC .append({'MCC': row[10], "floor": row[1], "equip_name": row[4], "QTY": int(row[6])})
+        # count floor for point list
             if 'floor' in row[1].lower() or 'level' in row[1].lower():
                 floor_set.add(row[1].lower().strip().replace(" ", ""))
                 # update when iterate equip
@@ -94,9 +99,9 @@ def get_equipments_list(equip_table):
     block_list = list(sorted(block_set))
     #floor_num_dict : the number of the floor in one block {"Block A": 10, "Block B": 11}         [for point summay sheet]
     # block_list: the list of all the blocks in one project ["Block A", "Block B"]                [for iterate in summary sheet]
-    # equip_qty_per_MCC_dict: the total quantity of equipment in one MCC location {'MCCZ-1': 1}   [for electrical load]
-
-    return equipments_list,equip_qty_per_MCC_dict,block_list,floor_num_dict
+    # equip_qty_per_floor_MCC: the total quantity of equipment in each floor in one MCC location D1 =[ {'MCC': "MCC01", "Floor":"Floor2", "Equip": "AHU", "QTY": 65},{'MCC': "MCC02", "Floor":"Floor2", "Equip": "AHU", "QTY": 65 }]  
+                            #  [for electrical load, change into DF for further calculation]
+    return equipments_list,pd.DataFrame(equip_qty_per_floor_MCC),block_list,floor_num_dict
 
 def get_points_list(point_table):  
 # point_list
@@ -789,7 +794,9 @@ def create_point_list_sheet_format(tot_df,MCCname,row_number_list, floor_name_li
         right_border_format = workbook.add_format({'font_name':'Cambria','valign': 'vcenter','align': 'center','font_size':8,'right':2,'left':4,'bottom': 4,'top':4})
         bottom_border_format = workbook.add_format({'font_name':'Cambria','valign': 'vcenter','align': 'center','font_size':28,'right':4,'left':4,'bottom': 2,'top':4})
         description_cell__format = workbook.add_format({'font_name':'Cambria','align': 'left','font_size':8,'right':4,'left':2,'bottom': 4,'top':4})
-    
+        # all bold stype
+        all_bold_format = workbook.add_format({'font_name':'Cambria','align': 'center','valign': 'vcenter','font_size':10,'right':2,'left':2,'bottom': 2,'top':2,'bold': True,})
+
         df_tot_row = row_number_list[count] - 2
         for row in range(df_tot_row):
          
@@ -798,34 +805,34 @@ def create_point_list_sheet_format(tot_df,MCCname,row_number_list, floor_name_li
                
                 if col == 0:            
                     # left border
-                    worksheet.write(row + 3 + offset, col + 1, tot_df.index.values[row][col], left_border_format)
+                    worksheet.write(row + 3 + offset, col + 1, tot_df.index.values[row + offset][col], left_border_format)
                 elif col == 4:
                     # right border
-                    worksheet.write(row + 3 + offset, col + 1, tot_df.index.values[row][col], right_border_format)          
+                    worksheet.write(row + 3 + offset, col + 1, tot_df.index.values[row + offset][col], right_border_format)          
                 else:
-                    worksheet.write(row + 3 + offset, col + 1, tot_df.index.values[row][col], cell1_format)
+                    worksheet.write(row + 3 + offset, col + 1, tot_df.index.values[row + offset][col], cell1_format)
 
                 # last row
                 if row == df_tot_row - 1 :
                     # bottom border
                 
-                    worksheet.write(row + 3 + offset, col + 1,tot_df.index.values[row][col], bottom_border_format)
+                    worksheet.write(row + 3 + offset, col + 1,tot_df.index.values[row + offset][col], bottom_border_format)
 
             #description have diff format
-            worksheet.write(row + 3 + offset, 6, tot_df.index.values[row][5], description_cell__format)
+            worksheet.write(row + 3 + offset, 6, tot_df.index.values[row + offset][5], description_cell__format)
 
 
         description_cell__button_format = workbook.add_format({'font_name':'Cambria','align': 'left','font_size':8,'right':2,'left':2,'bottom': 2,'top':4})
-        worksheet.write(df_tot_row + 2 + offset, 6, tot_df.index.values[df_tot_row - 1][5], description_cell__button_format)
+        worksheet.write(df_tot_row + 2 + offset, 6, tot_df.index.values[df_tot_row - 1  + offset][5], description_cell__button_format)
         # left bottom corner
         left_corner_format = workbook.add_format({'font_name':'Cambria','align': 'left','font_size':8,'right':4,'left':2,'bottom': 2,'top':4})
-        worksheet.write(df_tot_row + 2 + offset, 1, tot_df.index.values[df_tot_row - 1][1], left_corner_format)
+        worksheet.write(df_tot_row + 2 + offset, 1, tot_df.index.values[df_tot_row - 1 + offset][1], left_corner_format)
             
 
 
 
 
-            ####### CELL STYLE dashed and left align (pd col to  comment col)
+            ###### CELL STYLE dashed and left align (pd col to  comment col)
         cell2_format = workbook.add_format({'bottom': 4,'top':4, 'left':4, 'right':4,'font_name':'Cambria','font_size':8,'align': 'left'})
         left_border_alignleft_format = workbook.add_format({'font_name':'Cambria','valign': 'vcenter','align': 'left','font_size':8,'right':4,'left':2,'bottom': 4,'top':4})
         right_border__aligenleft_format = workbook.add_format({'font_name':'Cambria','valign': 'vcenter','align': 'left','font_size':8,'right':2,'left':4,'bottom': 4,'top':4})
@@ -833,26 +840,22 @@ def create_point_list_sheet_format(tot_df,MCCname,row_number_list, floor_name_li
             for col in range(tot_df.shape[1]):
                 if col == tot_df.shape[1] - 1:
                     # right border
-                    worksheet.write(row + 3 + offset, col + 7, tot_df.iloc[row,col], right_border__aligenleft_format)         
+                    worksheet.write(row + 3 + offset, col + 7, tot_df.iloc[row + offset ,col], right_border__aligenleft_format)         
                 else:
-                    worksheet.write(row + 3 + offset, col + 7, tot_df.iloc[row,col], cell2_format)
+                    worksheet.write(row + 3 + offset, col + 7, tot_df.iloc[row + offset,col], cell2_format)
                 if row == df_tot_row - 1:
                     # bottom border
                     bottom_border_left_format = workbook.add_format({'font_name':'Cambria','valign': 'vcenter','align': 'left','font_size':8,'right':4,'left':4,'bottom': 2,'top':4})
-                    worksheet.write(row + 3 + offset, col + 7, tot_df.iloc[row,col], bottom_border_left_format)
+                    worksheet.write(row + 3 + offset, col + 7, tot_df.iloc[row + offset,col], bottom_border_left_format)
         # right corner
         right_corner_format = workbook.add_format({'font_name':'Cambria','align': 'left','font_size':8,'right':2,'left':4,'bottom': 2,'top':4})
-        worksheet.write(df_tot_row + 2 + offset, 11, tot_df.iloc[df_tot_row - 1, 4], right_corner_format)
+        worksheet.write(df_tot_row + 2 + offset, 11, tot_df.iloc[df_tot_row - 1 + offset, 4], right_corner_format)
 
 
 
         # write the total BMS point
-
-        # all bold stype
-        all_bold_format = workbook.add_format({'font_name':'Cambria','align': 'center','valign': 'vcenter','font_size':10,'right':2,'left':2,'bottom': 2,'top':2,'bold': True,})
         worksheet.write(df_tot_row + 4 + offset, 2 , total_BMS_point_list_per_floor[count], all_bold_format)
-        worksheet.write(df_tot_row + 4 + offset, 7 , total_BMS_point_list_per_floor[count] * (1 + spare_points), all_bold_format)
-
+        worksheet.write(df_tot_row + 4 + offset, 7 , math.ceil(total_BMS_point_list_per_floor[count] * (1 + spare_points)), all_bold_format)
         worksheet.write(df_tot_row + 4 + offset, 1 , "Total BMS Points", all_bold_format)
         # merge range start from 0. so need to add 4 + 1
         worksheet.merge_range(f'E{df_tot_row + 5 + offset} :G{df_tot_row + 5 + offset}',f"Total BMS Points (+ {format(spare_points, '.2%')} Spare Capacity)",all_bold_format)
@@ -861,7 +864,15 @@ def create_point_list_sheet_format(tot_df,MCCname,row_number_list, floor_name_li
         # + 1 empty row + 1 total row + 1 emoty row
         offset += row_number_list[count] + 3
 
+    # write the total BMS point per MCC (total)
+    worksheet.write(tot_df.shape[0] + 7 , 2 , sum(total_BMS_point_list_per_floor), all_bold_format)
+    worksheet.write(tot_df.shape[0] + 7 , 7 , sum(total_BMS_point_list_per_floor) * (1 + spare_points), all_bold_format)
+    worksheet.write(tot_df.shape[0] + 7 , 1 , f" {MCCname} :Total BMS Points ", all_bold_format)
+    # merge range start from 0. so need to add + 1
+    worksheet.merge_range(f'E{tot_df.shape[0] + 8 } :G{tot_df.shape[0] + 8}',f"{MCCname}: Total BMS Points (+ {format(spare_points, '.2%')} Spare Capacity)",all_bold_format)
     worksheet.insert_image("B2", "logo.png",{"x_offset": 30, "y_offset": 10})
+
+    
 
 def createReportExcel(point_file, equip_file, project_file):
     project_name = point_file.split("-")[1]
@@ -978,94 +989,237 @@ def edit_project_summary(projectName, current_date,report_name):
 
     wb.save(report_name)
 
-def edit_electrical_loads(qty_per_MCC,report_name):
+def edit_electrical_loads(qty_floor_mcc_df,report_name):
     wb = load_workbook(report_name)
-
-
     ### add bottom border
     bottom_border = Border(left=Side(style='dashed'), 
                      right=Side(style='dashed'), 
                      top=Side(style='dashed'), 
-                     bottom=Side(style='thick'))
+                     bottom=Side(style='medium'))
     
     cell_border = Border(left=Side(style='dashed'), 
                      right=Side(style='dashed'), 
                      top=Side(style='dashed'), 
                      bottom=Side(style='dashed'))
-    left_cell_border = Border(left=Side(style='thick'), 
+    left_cell_border = Border(left=Side(style='medium'), 
                      right=Side(style='dashed'), 
                      top=Side(style='dashed'), 
                      bottom=Side(style='dashed'))
 
     right_cell_border = Border(left=Side(style='dashed'), 
-                     right=Side(style='thick'), 
+                     right=Side(style='medium'), 
                      top=Side(style='dashed'), 
                      bottom=Side(style='dashed'))
-    left_corner_cell_border= Border(left=Side(style='thick'), 
+    left_corner_cell_border= Border(left=Side(style='medium'), 
                      right=Side(style='dashed'), 
                      top=Side(style='dashed'), 
-                     bottom=Side(style='thick'))
+                     bottom=Side(style='medium'))
     right_corner_cell_border= Border(left=Side(style='dashed'), 
-                     right=Side(style='thick'), 
+                     right=Side(style='medium'), 
                      top=Side(style='dashed'), 
-                     bottom=Side(style='thick'))
+                     bottom=Side(style='medium'))
+    bolder_cell = Border(left=Side(style='medium'), 
+                     right=Side(style='medium'), 
+                     top=Side(style='medium'), 
+                     bottom=Side(style='medium'))
+    left_thick = Border(left = Side(style = "medium"))
+    bottom_thick = Border(bottom = Side(style = "medium"))
+    top_thick = Border(top = Side(style = "medium"))
+    left_dash =  Border(left = Side(style = "dashed"))
+
+    tot_font = Font(name='Cambria', bold=True,size = 9)
+    alignment = Alignment( vertical='center')
     
-    for key, innerdict in qty_per_MCC.items():
+    for key in qty_floor_mcc_df["MCC"].unique():
        
     ## change the table TITLE to MCC name
         wb.active = wb[f"{key} - Electrical Loads"]
         ws = wb.active
-        ws['B2'].value = key
-        count = 11
-        # copy equipment name into excel and set border style 
-        pattern = re.compile(r'\w+ to \w+')
+        ws['B2'].value = f"{key} - Electrical Loads"
+#####  assistance function
+        def copy_range(range_str, sheet, offset):
+
+            """ Copy cell values and style to the new row using offset"""
+            for row in rows_from_range(range_str):
+                for cell in row:
+                    if sheet[cell].value is not None:  # Don't copy other cells in merged unit
+                        dst_cell = sheet[cell].offset(row=offset, column=0)
+                        src_cell = sheet[cell]
+
+                        ### Copy Cell value
+                        dst_cell.value = src_cell.value
+
+                        ### Copy Cell Styles
+                        dst_cell.font = copy(src_cell.font)
+                        dst_cell.alignment = copy(src_cell.alignment)
+                        dst_cell.border = copy(src_cell.border)
+                        dst_cell.fill = copy(src_cell.fill)
+                        dst_cell.number_format = src_cell.number_format
+   
+        def get_merge_list(r_range, r_offset):
         
-        for equip, qty in innerdict.items():
-            # initialize flag
-            pattern_found = False
-            if pattern.search(equip):
-                # found -> "FCU-01-01 to FCU-01-50"
-                # flag means value assigned different when later in the loop
-                pattern_found = True
-                start_val = int(equip.split(" ")[0].split("-")[2])
-            for i in range(qty):
-                # use flag to decide which assignment 
-                if pattern_found:
-                    ws[f'B{count + i}'].value = equip.split("-")[0] + "-" + equip.split("-")[1] + "-" + str(format(start_val + i,'02'))
-                    
-                else: 
-                    ws[f'B{count + i}'].value = equip
-                # column style design after each row filled
-                for col in range (2,28):
-                    if col == 2 :
-                        ws.cell(row = count + i, column = col ).border = left_cell_border
-                    elif col == 27:
-                        ws.cell(row = count + i, column = col ).border = right_cell_border
+            """ Create a list of new cell merges from the existing row"""
+            area = CellRange(r_range)  # Range to check for merged cells
+            mlist = []  # List of merged cells on existing row offset to the new row
+            for mc in ws.merged_cells:
+                if mc.coord not in area:
+                    continue
+                cr = CellRange(mc.coord)
+                cr.shift(row_shift=r_offset)
+                mlist.append(cr.coord)
+            return mlist
+        
+        # update value in each sheet
+        qty_floor_mcc_df.sort_values(["MCC", "floor","equip_name","QTY"])
+        equip_group_by_floor = qty_floor_mcc_df.groupby(["MCC","floor","equip_name"]).agg({"QTY":"sum"})
+        start_row = 21
+        
+        floor_list = qty_floor_mcc_df[qty_floor_mcc_df['MCC'] == key]["floor"].unique()
+        for num, f in enumerate(floor_list):  # return the floor only in that MCC
+            # in each table in sheet. write equip 1 by 1
+            # equi_qty_df = equip_group_by_floor.xs((key,f), level = ["MCC","floor"]).reset_index()["equip_name","QTY"]
+            equi_qty_df = qty_floor_mcc_df[qty_floor_mcc_df['floor'] == f][["equip_name","QTY"]]
+            # after filter, the index needs to reset into 0 in order to the iteration
+            equi_qty_df = equi_qty_df.reset_index(drop = True)
+            equip_num_floor = 0
+            for  i in range(len(equi_qty_df)):
+                
+                # print(f"MCC: {key}. Floor: {f}")
+                # print(equi_qty_df.loc[i,"equip_name"],equi_qty_df.loc[i,"QTY"])
+                # repeat qty row for i equipment 
+                
+                for q in range(equi_qty_df.loc[i,"QTY"]):
+                    equip_num_floor += 1
+                    if equi_qty_df.loc[i,"equip_name"].count('-') > 3: # if it is "FCU-01-01to FCU-01-50" pattern
+                        ws[f'B{start_row + q}'].value = equi_qty_df.loc[i,"equip_name"].split("-")[0]
                     else:
-                        ws.cell(row = count + i, column = col ).border = cell_border
-            ws.column_dimensions['B'].width = 25
-            count += i + 1
+                        ws[f'B{start_row + q}'].value = equi_qty_df.loc[i,"equip_name"]
+                    ws.column_dimensions['B'].width = 25
 
-        #### bottom border style
-        for col in range(2,28):
-            if col == 2 :
-                        ws.cell(row = count, column = col ).border = left_corner_cell_border
-            elif col == 27:
-                        ws.cell(row = count, column = col ).border = right_corner_cell_border
-            else:
-                ws.cell(row = count, column = col).border = bottom_border
 
-        ##### add formula of bottom graph 
-        for col in range(12, 16):
-            col_letter = openpyxl.utils.get_column_letter(col)
-            ## park load formula
-            ws[f'{col_letter}{count + 2}'].value = f'=SUM({col_letter}{11}:{col_letter}{count})' 
-            # peak load formula
-            ws[f'{col_letter}{count + 3}'] = f'=IF($P$14="3Ph",(({col_letter}{count + 2}*1000)/((SQRT(3))*400)),(({col_letter}{count + 2}*1000)/230))' 
-            # diversified peal load amps
-            ws[f'{col_letter}{count + 5}'] = f'=SUM({col_letter}{count + 2}:{col_letter}{count + 3})'     
+                    # the cell style
+                    for col in range (2,28):
+                        if col == 2 :
+                            ws.cell(row = start_row + q, column = col ).border = left_cell_border
+                        elif col == 27:
+                            ws.cell(row = start_row + q, column = col ).border = right_cell_border
+                        else:
+                            ws.cell(row = start_row + q, column = col ).border = cell_border
+            
+       
+
+               
+                # finish one equipment iteration 
+                start_row = start_row + q + 1
+                # 8 is the line between 2 table + 3 for total equip num
+
+            # finish one table in one floor  + num of empty line among 2 tables
+            # last time no need to copy
+            if num != len(floor_list) - 1:
+                #### copy the title STYLE for all merged cell
+                range_str = 'B15:AA20'
+                #find header start row
+                # -14 (startrow  start from 14) + 4 (4 empty row between 2 table)
+                row_offset = start_row - 14 + 4
+                
+                ### Create a range list for merged cells on new row
+                
+                new_merge_list = get_merge_list(range_str, row_offset)
+                
+                # ### Create merged cells on new row
+                for nm in new_merge_list:
+                    ws.merge_cells(nm)
+
+                ### Copy cell values to new row
+                copy_range(range_str, ws, row_offset)
+
+                # update header name
+                ws[f'B{start_row + 5 }'].value = f"{key} - {f}"
+
+                #### bottom border style
+                ## bottom border is the previou row 
+                for col in range(2,28):
+                    if col == 3 or col == 5 or col == 6 or (col >=9 and col < 19) or (col >=21 and col <24):
+                        for m in range(7,11):
+                            ws.cell(row = start_row + m, column = col).border = left_dash
+
+
+                    ws.cell(row = start_row + 10, column = col).border = bottom_thick # title lower border thick
+                    ### set left border in title area
+                    if col == 2 or  col == 4 or  col == 7 or  col == 8 or  col == 19 or  col >= 24 :
+                        for c in range (7,10):
+                            ws.cell(row = start_row + c, column = col).border = left_thick
+                        ws.cell(row = start_row + 10, column = col).border = left_corner_cell_border
+                    ws.cell(row = start_row , column = col).border =top_thick
+                    ws.cell(row = start_row + 4, column = col).border = bottom_thick
+                    ws.cell(row = start_row + 5, column = col).border = bolder_cell  # +5: header row
+                    ws.cell(row = start_row + 6, column = col).border = bolder_cell   # +6: title row
+
+                  
+                ## last column
+                for c in range(5,11):
+                    ws.cell(row = start_row + c, column = 28).border = left_thick 
+                   
+         
+
+
+           
+
+            # write the total equip num
+            ws.cell(row = start_row + 1, column = 2 ).border = bolder_cell
+            ws.cell(row = start_row + 1, column = 2 ).font = tot_font
+            ws.cell(row = start_row + 1, column = 2 ).alignment = alignment
+            ws.row_dimensions[start_row + 1].height = 15
+            ws.row_dimensions[start_row + 6].height = 30
+            ws.row_dimensions[start_row + 5].height = 45
+            ws.merge_cells(f"B{start_row + 1}:C{start_row + 1}")
+            ws[f'B{start_row + 1}'].value = f"Total Equipment Number({f})"
+            ws.cell(row = start_row + 1, column = 4 ).border = bolder_cell
+            ws.cell(row = start_row + 1, column = 4 ).alignment = alignment
+            ws.cell(row = start_row + 1, column = 4 ).font = tot_font
+            ws[f'D{start_row + 1}'].value = equip_num_floor 
+            
+         
+            
+             
+            start_row  += 11 
+            
+
+    ws.cell(row = start_row , column = 2 ).border = bolder_cell
+    ws.cell(row = start_row, column = 2 ).font = tot_font
+    ws.cell(row = start_row + 1, column = 2 ).alignment = alignment
+    ws.merge_cells(f"B{start_row}:C{start_row}")
+    ws[f'B{start_row }'].value = "Total Equipment Number:"
+    ws.row_dimensions[start_row ].height = 15
+    ws.cell(row = start_row , column = 4 ).border = bolder_cell
+    ws.cell(row = start_row, column = 4 ).font = tot_font
+    ws.cell(row = start_row, column = 4 ).alignment = alignment
+    ws[f'D{start_row}'].value = qty_floor_mcc_df.groupby(["MCC"]).agg({"QTY":"sum"}).loc[key,"QTY"]
+        
+
+    final_row = start_row - 11
+    #### add formula  
+    for col in range(12, 16):
+        col_letter = openpyxl.utils.get_column_letter(col)
+        ## park load formula
+        ws[f'{col_letter}7'].value = f'=SUM({col_letter}{21}:{col_letter}{final_row})' 
+        # peak load formula
+        ws[f'{col_letter}8'] = f'=IF($P$4="3Ph",(({col_letter}7*1000)/((SQRT(3))*400)),(({col_letter}7*1000)/230))' 
+        # diversified peal load amps
+        ws[f'{col_letter}10'] = f'={col_letter}7 * {col_letter}8'
+
 
     wb.save(report_name)
+
+
+
+ 
+
+
+
+
+
+
 
 def copy_electrical_loads_title_win32(qty_per_MCC,report_name):
 
@@ -1101,113 +1255,43 @@ def copy_electrical_loads_title_win32(qty_per_MCC,report_name):
     wb_des.Close(SaveChanges=True)
     xl.Quit()
 
-def copy_electrical_loads_title(qty_per_MCC,report_name):
+def copy_electrical_loads_title(qty_floor_mcc_df,report_name):
 
     file_path = os.path.abspath('G:\\Ethos Digital\\BMS Points Generator Reports\\Template\\BMS Export Template.xlsx')
-   
-    path2 = report_name
-   
-
+    # Load the source workbook
     source_wb = openpyxl.load_workbook(file_path)
-    target_wb =load_workbook(report_name)
+    # Get the source worksheet
     source_sheet = source_wb['LG Floor - Electrical Loads']
-    # Find the index of the specific sheet
-    specific_sheet_index = target_wb.sheetnames.index('Points Summary')
-  
-
-    for key, innerdict in qty_per_MCC.items():
-        
-            
-       
-        # ws2 = wb_des.Worksheets.Add(After = wb_des.Worksheets['Project Summary'])
-        # ws2.Name = f"{key} - Electrical Loads"
-        target_sheet = target_wb.create_sheet(f"{key} - Electrical Loads", specific_sheet_index + 1)
-        # Copy a range from the original worksheet
-        # row of equip qty + offset
-        #start_row_sum = sum(innerdict.values()) + 12
-        #ws_res.Range("A1:AA10").Copy(ws2.Range("A1:AA10"))
-        #ws_res.Range("B43:AA49").Copy(ws2.Range(f"B{start_row_sum}:AA{start_row_sum + 6}"))
-
-        
-        
-        
-        
-        for i in range(1, 11):
-            for j in range(1, 28):
-                source_cell = source_sheet.cell(row=i, column=j)
-                target_cell = target_sheet.cell(row=i, column=j)
-                
-
-                # Copy the value
-                if not isinstance(source_cell, MergedCell):
-                    target_cell.value = source_cell.value
-         
-                # Copy the style
-                if source_cell.has_style:
-                    target_cell._style = copy(source_cell._style)
-                
-
-                if source_sheet.merged_cells.ranges:
-                     
-                    for merged_range in source_sheet.merged_cells.ranges:
-                        if source_cell.coordinate in merged_range:
-                            # Merge the same cells in the target sheet
-                            print(merged_range)
-                            target_sheet.merge_cells(str(merged_range))
-                            
-        #         # Copy the value
-        #         target_cell.value = source_cell.value
-               
-                
-        #         target_cell.font = copy(source_cell.font)
-        #         target_cell.fill = copy(source_cell.fill)
-        #         target_cell.border = copy(source_cell.border)
-        #         target_cell.number_format = copy(source_cell.number_format)
-        #         target_cell.protection = copy(source_cell.protection)
-        #         target_cell.alignment = copy(source_cell.alignment)
-                
-        #         # Copy the style
-        #         if source_cell.has_style:
-        #             target_cell._style = copy(source_cell._style)
 
 
-        #         # # Copy merged cells
-        #         # for cell_range in source_sheet.merged_cells:
-        #         #     target_sheet.merge_cells(cell_range.coord)
+    # load workbook and add a new sheet
+    target_wb =load_workbook(report_name)
 
-                        
-        #         # Copy the dimensions
-        #         target_sheet.row_dimensions[i] = copy(source_sheet.row_dimensions[i])
-        #         target_sheet.column_dimensions[get_column_letter(j)] = copy(source_sheet.column_dimensions[get_column_letter(j)])
-        
+    for key in qty_floor_mcc_df["MCC"].unique():
+        target_sheet = target_wb.create_sheet(f"{key} - Electrical Loads", 1)
 
-    ###########
+        # Copy the style of each cell in the source sheet to the target sheet
+        for (row, col), source_cell in source_sheet._cells.items():
+            target_cell = target_sheet.cell(column=col, row=row)
+            target_cell.value = source_cell.value
+            target_cell.font = copy(source_cell.font)
+            target_cell.fill = copy(source_cell.fill)
+            target_cell.border = copy(source_cell.border)
+            target_cell.number_format = copy(source_cell.number_format)
+            target_cell.protection = copy(source_cell.protection)
+            target_cell.alignment = copy(source_cell.alignment)
 
+        # Copy column widths
+        for col_letter in source_sheet.column_dimensions:
+            target_sheet.column_dimensions[col_letter].width = source_sheet.column_dimensions[col_letter].width
 
-    # Copy the style of each cell in the source sheet to the target sheet
-    # for (row, col), source_cell in source_sheet._cells.items():
-    #     target_cell = target_sheet.cell(column=col, row=row)
-    #     target_cell.value = source_cell.value
-    #     target_cell.font = copy(source_cell.font)
-    #     target_cell.fill = copy(source_cell.fill)
-    #     target_cell.border = copy(source_cell.border)
-    #     target_cell.number_format = copy(source_cell.number_format)
-    #     target_cell.protection = copy(source_cell.protection)
-    #     target_cell.alignment = copy(source_cell.alignment)
+        # Copy row heights
+        for row_number in source_sheet.row_dimensions:
+            target_sheet.row_dimensions[row_number].height = source_sheet.row_dimensions[row_number].height
 
-    # # Copy column widths
-    # for col_letter in source_sheet.column_dimensions:
-    #     target_sheet.column_dimensions[col_letter].width = source_sheet.column_dimensions[col_letter].width
-
-    # # Copy row heights
-    # for row_number in source_sheet.row_dimensions:
-    #     target_sheet.row_dimensions[row_number].height = source_sheet.row_dimensions[row_number].height
-
-    # # Copy merged cells
-    # for cell_range in source_sheet.merged_cells:
-    #     target_sheet.merge_cells(cell_range.coord)
-
-
+        # Copy merged cells
+        for cell_range in source_sheet.merged_cells:
+            target_sheet.merge_cells(cell_range.coord)
 
 
 
@@ -1216,36 +1300,41 @@ def copy_electrical_loads_title(qty_per_MCC,report_name):
     target_wb.close()
 
 
+
 def equip_summary_format(equip_sum,equip_sum_row_num,equip_sum_count_list,equip_table_row_num,block_list,report_name):
+  
     path = report_name
     wb = load_workbook(path)
     ws = wb['Equipment Summary']
     bottom_border = Border(left=Side(style='dashed'), 
                      right=Side(style='dashed'), 
                      top=Side(style='dashed'), 
-                     bottom=Side(style='thick'))
+                     bottom=Side(style='medium'))
+    
+    top_thick_border = Border(top=Side(style='medium'), 
+                    )
     
     cell_border = Border(left=Side(style='dashed'), 
                      right=Side(style='dashed'), 
                      top=Side(style='dashed'), 
                      bottom=Side(style='dashed'))
-    left_cell_border = Border(left=Side(style='thick'), 
+    left_cell_border = Border(left=Side(style='medium'), 
                      right=Side(style='dashed'), 
                      top=Side(style='dashed'), 
                      bottom=Side(style='dashed'))
 
     right_cell_border = Border(left=Side(style='dashed'), 
-                     right=Side(style='thick'), 
+                     right=Side(style='medium'), 
                      top=Side(style='dashed'), 
                      bottom=Side(style='dashed'))
-    left_corner_cell_border= Border(left=Side(style='thick'), 
+    left_corner_cell_border= Border(left=Side(style='medium'), 
                      right=Side(style='dashed'), 
                      top=Side(style='dashed'), 
-                     bottom=Side(style='thick'))
+                     bottom=Side(style='medium'))
     right_corner_cell_border= Border(left=Side(style='dashed'), 
-                     right=Side(style='thick'), 
+                     right=Side(style='medium'), 
                      top=Side(style='dashed'), 
-                     bottom=Side(style='thick'))
+                     bottom=Side(style='medium'))
     
     font = Font(name='Cambria',size = 8)
     left_align = Alignment(horizontal='left', vertical='center')
@@ -1348,29 +1437,29 @@ def point_summary_format(point_sum,point_sum_row_num,point_sum_count_list,point_
     bottom_border = Border(left=Side(style='dashed'), 
                      right=Side(style='dashed'), 
                      top=Side(style='dashed'), 
-                     bottom=Side(style='thick'))
+                     bottom=Side(style='medium'))
     
     cell_border = Border(left=Side(style='dashed'), 
                      right=Side(style='dashed'), 
                      top=Side(style='dashed'), 
                      bottom=Side(style='dashed'))
-    left_cell_border = Border(left=Side(style='thick'), 
+    left_cell_border = Border(left=Side(style='medium'), 
                      right=Side(style='dashed'), 
                      top=Side(style='dashed'), 
                      bottom=Side(style='dashed'))
 
     right_cell_border = Border(left=Side(style='dashed'), 
-                     right=Side(style='thick'), 
+                     right=Side(style='medium'), 
                      top=Side(style='dashed'), 
                      bottom=Side(style='dashed'))
-    left_corner_cell_border= Border(left=Side(style='thick'), 
+    left_corner_cell_border= Border(left=Side(style='medium'), 
                      right=Side(style='dashed'), 
                      top=Side(style='dashed'), 
-                     bottom=Side(style='thick'))
+                     bottom=Side(style='medium'))
     right_corner_cell_border= Border(left=Side(style='dashed'), 
-                     right=Side(style='thick'), 
+                     right=Side(style='medium'), 
                      top=Side(style='dashed'), 
-                     bottom=Side(style='thick'))
+                     bottom=Side(style='medium'))
     
     font = Font(name='Cambria',size = 8)
     left_align = Alignment(horizontal='left', vertical='center')
@@ -1391,17 +1480,14 @@ def point_summary_format(point_sum,point_sum_row_num,point_sum_count_list,point_
                 ws.cell(row = start_row, column = start_col ).alignment = center_align
                 #### start from 1
                 if col == 1 or col == 2:
-
                     ws.cell(row = start_row, column = start_col ).border = left_cell_border
-                
                 elif (col == tot_col) or (col == len(point_sum.index[0])):
-                    ws.cell(row = start_row, column = start_col ).border = right_cell_border
-                elif (col == 2) or (col == 3):
-                    ws.cell(row = start_row, column = start_col ).alignment = left_align
+                    ws.cell(row = start_row, column = start_col ).border = right_cell_border             
                 else:
                     ws.cell(row = start_row, column = start_col ).border = cell_border
 
-                
+                if (col == 2) or (col == 3):
+                    ws.cell(row = start_row, column = start_col ).alignment = left_align
                 if(ws.cell(row=start_row, column=3).value == "Floor Area"):
                  
                     ws[f'C{start_row}'] = f'Floor Area ({floor_num_dict[block]})'
@@ -1422,6 +1508,7 @@ def point_summary_format(point_sum,point_sum_row_num,point_sum_count_list,point_
                 ws.cell(row = start_row, column = start_col ).alignment = center_align
                 if (col == 2) or (col == 3):
                     ws.cell(row = start_row, column = start_col ).alignment = left_align 
+
                 if col == 1 or col == 2:
                     ws.cell(row = start_row, column = start_col ).border = left_cell_border
                 elif (col == tot_col) or (col == len(point_sum.index[0])):
@@ -1464,14 +1551,18 @@ def point_summary_format(point_sum,point_sum_row_num,point_sum_count_list,point_
     wb.save(path)
     wb.close()
 
-def apply_border_again(block_list,point_sum_row_num,point_sum):
-    path = 'G:\\Ethos Digital\\BMS Points Generator Reports\\BMS Final Export.xlsx'
-    wb = load_workbook(path)
-    ws = wb['Points Summary']
+def apply_border_again(equip_sum_row_num,equip_table_row_num,report_name):
+    
+    wb = load_workbook(report_name)
+    ws = wb['Equipment Summary']
 
-
-      
-    wb.save(path)
+    top_thick_border = Border(top=Side(style='medium'))
+    top_bottom_thick_border = Border(top=Side(style='medium'),bottom = Side(style='medium'))
+    for col in [2,10]:
+        ws.cell(row = equip_sum_row_num[0] + 2, column = col ).border = top_bottom_thick_border
+        ws.cell(row = equip_table_row_num[0] + 2, column = col ).border = top_thick_border
+        
+    wb.save(report_name)
     wb.close()
 
 
@@ -1480,31 +1571,32 @@ def get_final_report(projectName):
     current_date = date.today()
     #current_date = datetime.datetime(2023, 11, 15)
     equip_sum, equip_sum_row_num, equip_sum_count_list, equip_table_row_num, block_list,point_sum, point_sum_row_num,point_sum_count_list, point_table_row_num,report_name = createReportExcel(
-                      f'G:\\Ethos Digital\\BMS Points Generator Reports\\Points Schedule - {projectName} - {current_date.day:02d}-{current_date.month:02d}-{current_date.year}.csv\\Points.csv',
-                      f'G:\\Ethos Digital\\BMS Points Generator Reports\\Points Schedule - {projectName} - {current_date.day:02d}-{current_date.month:02d}-{current_date.year}.csv\\Equipment.csv',
-                      f'G:\\Ethos Digital\\BMS Points Generator Reports\\Points Schedule - {projectName} - {current_date.day:02d}-{current_date.month:02d}-{current_date.year}.csv\\Projects.csv')
+                      f'\\eeazurefilesne.file.core.windows.net\\Ethos Digital\\BMS Points Generator Reports\\Points Schedule - {projectName} - {current_date.day:02d}-{current_date.month:02d}-{current_date.year}.csv\\Points.csv',
+                      f'\\eeazurefilesne.file.core.windows.net\\\Ethos Digital\\BMS Points Generator Reports\\Points Schedule - {projectName} - {current_date.day:02d}-{current_date.month:02d}-{current_date.year}.csv\\Equipment.csv',
+                      f'\\eeazurefilesne.file.core.windows.net\\Ethos Digital\\BMS Points Generator Reports\\Points Schedule - {projectName} - {current_date.day:02d}-{current_date.month:02d}-{current_date.year}.csv\\Projects.csv')
     
     #openpyxl to format the cell font
     ## need get equip per MCC {'MMC -A' : {"fcu" : 6, "ahu":9}}
     ### num of equipment = row of that equip
-    _, qty_per_MCC ,_,floor_num_dict= get_equipments_list(f'G:\\Ethos Digital\\BMS Points Generator Reports\\Points Schedule - {projectName} - {current_date.day:02d}-{current_date.month:02d}-{current_date.year}.csv\\Equipment.csv') 
+    _, qty_floor_mcc_df ,_,floor_num_dict= get_equipments_list(f'\\eeazurefilesne.file.core.windows.net\\generalshare\\Ethos Digital\\BMS Points Generator Reports\\Points Schedule - {projectName} - {current_date.day:02d}-{current_date.month:02d}-{current_date.year}.csv\\Equipment.csv') 
     point_summary_format(point_sum,point_sum_row_num,point_sum_count_list,point_table_row_num, block_list,floor_num_dict,report_name)
     equip_summary_format(equip_sum,equip_sum_row_num,equip_sum_count_list,equip_table_row_num, block_list,report_name)
    
     
     
     copy_project_sum(report_name)
-    ##### EDIT copied sheet(Project summary and electrical loads)  
+    # ##### EDIT copied sheet(Project summary and electrical loads)  
     edit_project_summary(projectName,current_date,report_name)
 
 
   
-    # copy_electrical_loads_title(qty_per_MCC,report_name)
-    #edit_electrical_loads(qty_per_MCC,report_name)
+    copy_electrical_loads_title(qty_floor_mcc_df,report_name)
+    edit_electrical_loads(qty_floor_mcc_df,report_name)
     
     #openpyxl didn't preserve all the original information when it loaded the workbook, some of the original formatting might be lost, so we need to reapply missing feature
-    # apply_border_again(block_list,point_sum_row_num,point_sum)
+    ## in our case,. equipment summary 2 bottom border has issue
+    apply_border_again(equip_sum_row_num,equip_table_row_num,report_name)
 
-if __name__=="__main__":
-    #get_final_report('Camden Yard Script Test')
-    get_final_report('Linkedin 4 Wilton Park')
+# if __name__=="__main__":
+#     #get_final_report('Camden Yard Script Test')
+#     get_final_report('Linkedin Test')
