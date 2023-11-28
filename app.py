@@ -10,6 +10,9 @@ from watchdog.events import FileSystemEventHandler
 from datetime import date
 import threading
 
+
+
+
 app = Flask(__name__)
 
 current_date = date.today()
@@ -33,10 +36,10 @@ def exportReport():
     thread.join() # main thread relies on the result of other threads, so join needed
     return render_template('index.html', param1=param1, param2=param2, param3=param3)
 
-# @app.route('/')
-# def index():
-#    print('Request for index page received')
-#    return render_template('index.html')
+@app.route('/')
+def index():
+   print('Request for index page received')
+   return render_template('export.html')
 
 @app.route('/favicon.ico')
 def favicon():
