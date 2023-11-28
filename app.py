@@ -8,10 +8,20 @@ from exportFinalReport import *
 app = Flask(__name__)
 
 
-@app.route('/')
-def index():
-   print('Request for index page received')
-   return render_template('index.html')
+## powerapp only allow GET method
+@app.route('/export', methods=['GET'])
+def exportReport():
+    param1 = request.args.get('p1', "default_value1")
+    param2 = request.args.get('p2', "default_value2")
+    param3 = request.args.get('p3', "default_value3")
+  
+    get_final_report(param2)
+    return render_template('index.html', param1=param1, param2=param2, param3=param3)
+
+# @app.route('/')
+# def index():
+#    print('Request for index page received')
+#    return render_template('index.html')
 
 @app.route('/favicon.ico')
 def favicon():
