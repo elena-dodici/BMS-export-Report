@@ -1568,7 +1568,7 @@ def apply_border_again(equip_sum_row_num,equip_table_row_num,report_name):
 
 
 def get_final_report(projectName):
-    
+
     current_date = date.today()
     #current_date = datetime.datetime(2023, 11, 15)
     equip_sum, equip_sum_row_num, equip_sum_count_list, equip_table_row_num, block_list,point_sum, point_sum_row_num,point_sum_count_list, point_table_row_num,report_name = createReportExcel(
