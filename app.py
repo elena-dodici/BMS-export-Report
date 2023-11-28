@@ -9,6 +9,10 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from datetime import date
 import threading
+import logging
+
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 
 
